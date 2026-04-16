@@ -1,0 +1,44 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: consumo-apis
+  
+  # MongoDB Atlas Configuration
+  data:
+    mongodb:
+      uri: mongodb+srv://kellerrejas_db_user:T6NwrDiXbfIBvCRA@mycluster.bee1ylw.mongodb.net/15_keller_rejas?appName=MyCluster
+  
+  # Jackson Configuration
+  jackson:
+    default-property-inclusion: non_null
+    serialization:
+      write-dates-as-timestamps: false
+
+# API Configuration
+apis:
+  google-maps:
+    rapidapi-key: 82b52b3434msh84355d1fee2ef45p1ae74cjsnffcd418fadaa
+    base-url: https://google-map-places-new-v2.p.rapidapi.com
+  
+  ip-geo:
+    rapidapi-key: 82b52b3434msh84355d1fee2ef45p1ae74cjsnffcd418fadaa
+    base-url: https://ip-geo-location10.p.rapidapi.com
+
+# Logging Configuration
+logging:
+  level:
+    com.aej.consumoapis: DEBUG
+    org.springframework.web.reactive: DEBUG
+    reactor.netty: INFO
+
+# Management Endpoints
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
