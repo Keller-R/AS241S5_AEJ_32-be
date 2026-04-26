@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: keller-rejas-32-deployment
+  namespace: keller-rejas-32
+  labels:
+    app: consumo-apis
+    name: keller-rejas-32-deployment
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: consumo-apis
+      name: keller-rejas-32-deployment
+  template:
+    metadata:
+      labels:
+        app: consumo-apis
+        name: keller-rejas-32-deployment
+    spec:
+      containers:
+        - name: consumo-apis
+          image: kellerrejas/consumo-apis:latest
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+          env:
+            - name: SPRING_DATA_MONGODB_URI
+              valueFrom:
+                secretKeyRef:
+                  name: keller-rejas-32-secret
+                  key: MONGODB_URI
+            - name: APIS_GOOGLE_MAPS_RAPIDAPI_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: keller-rejas-32-secret
+                  key: RAPIDAPI_KEY
+            - name: APIS_IP_GEO_RAPIDAPI_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: keller-rejas-32-secret
+                  key: RAPIDAPI_KEY
+            - name: APIS_GOOGLE_MAPS_BASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: keller-rejas-32-secret
+                  key: GOOGLE_MAPS_BASE_URL
+            - name: APIS_IP_GEO_BASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: keller-rejas-32-secret
+                  key: IP_GEO_BASE_URL
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            initialDelaySeconds: 120
+            periodSeconds: 30
+            timeoutSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            initialDelaySeconds: 90
+            periodSeconds: 10
+            timeoutSeconds: 5

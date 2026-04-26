@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: keller-rejas-32
+  labels:
+    name: keller-rejas-32
+    app: consumo-apis
