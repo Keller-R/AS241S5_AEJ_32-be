@@ -17,9 +17,9 @@ echo ""
 echo "[1/3] Instalando k3s (sin systemd)..."
 curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="--disable=traefik" INSTALL_K3S_SKIP_ENABLE=true sh -
 
-# Iniciar k3s manualmente en background
+# Iniciar k3s manualmente en background (con snapshotter nativo para Codespace)
 echo "      Iniciando k3s en background..."
-sudo k3s server --disable=traefik &
+sudo k3s server --disable=traefik --snapshotter=native &
 K3S_PID=$!
 echo "      k3s PID: $K3S_PID"
 
