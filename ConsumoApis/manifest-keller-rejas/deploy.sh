@@ -1,58 +1,108 @@
 #!/bin/bash
 # =============================================================
-# Script de despliegue completo - Keller Rejas 32
-# Uso: bash deploy.sh <tu-usuario-dockerhub>
-# Ejemplo: bash deploy.sh kellerrejas
+# Script de despliegue para Killercoda - Keller Rejas 32
+# Uso: bash deploy.sh
 # =============================================================
 
-DOCKERHUB_USER=${1:-kellerrejas}
-IMAGE_NAME="consumo-apis"
+IMAGE_NAME="kellerrejas/consumo-apis"
 IMAGE_TAG="latest"
-FULL_IMAGE="$DOCKERHUB_USER/$IMAGE_NAME:$IMAGE_TAG"
+FULL_IMAGE="$IMAGE_NAME:$IMAGE_TAG"
 NAMESPACE="keller-rejas-32"
-MANIFEST_DIR="$(dirname "$0")"
+MANIFEST_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(dirname "$MANIFEST_DIR")"
 
 echo "============================================="
-echo " DESPLIEGUE - Keller Rejas 32"
+echo " DESPLIEGUE EN KILLERCODA - Keller Rejas 32"
 echo " Imagen: $FULL_IMAGE"
 echo "============================================="
 
+# Verificar que estamos en el directorio correcto
+if [ ! -f "$PROJECT_DIR/pom.xml" ]; then
+    echo "❌ ERROR: No se encuentra pom.xml en $PROJECT_DIR"
+    echo "   Ejecuta este script desde: ConsumoApis/manifest-keller-rejas/"
+    exit 1
+fi
+
+echo "Directorio del proyecto: $PROJECT_DIR"
+echo "Directorio de manifiestos: $MANIFEST_DIR"
+
+# ---- 0. INSTALAR DEPENDENCIAS ----
+echo ""
+echo "[0/6] Instalando dependencias (Java 17 + Maven)..."
+
+# Verificar si Maven está instalado
+if ! command -v mvn &> /dev/null; then
+    echo "Instalando Maven..."
+    apt-get update -qq
+    apt-get install -y maven -qq
+fi
+
+# Verificar versión de Java
+JAVA_VERSION=$(java -version 2>&1 | awk -F '"' '/version/ {print $2}' | cut -d'.' -f1)
+if [ "$JAVA_VERSION" -lt 17 ]; then
+    echo "Java $JAVA_VERSION detectado. Instalando Java 17..."
+    apt-get update -qq
+    apt-get install -y openjdk-17-jdk -qq
+    
+    # Configurar Java 17 como predeterminado
+    export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+    export PATH=$JAVA_HOME/bin:$PATH
+    
+    echo "Java 17 instalado y configurado"
+fi
+
+# Verificar instalación
+echo "Versiones instaladas:"
+java -version
+mvn -version
+
+echo "✅ Dependencias instaladas"
+
 # ---- 1. BUILD JAR ----
 echo ""
-echo "[1/5] Compilando proyecto Spring Boot..."
-cd "$PROJECT_DIR" || exit 1
-mvn clean package -DskipTests -B
+echo "[1/6] Compilando proyecto Spring Boot..."
+cd "$PROJECT_DIR" || {
+    echo "❌ ERROR: No se puede acceder al directorio $PROJECT_DIR"
+    exit 1
+}
+echo "Directorio actual: $(pwd)"
+echo "Verificando pom.xml..."
+ls -la pom.xml
+
+mvn clean package -DskipTests
 if [ $? -ne 0 ]; then
-  echo "ERROR: Falló la compilación Maven"
-  exit 1
+    echo "❌ ERROR: Falló la compilación del proyecto"
+    exit 1
 fi
-echo "✅ JAR generado correctamente"
+echo "✅ JAR generado: target/consumo-apis-1.0.0.jar"
 
 # ---- 2. BUILD DOCKER IMAGE ----
 echo ""
-echo "[2/5] Construyendo imagen Docker: $FULL_IMAGE"
+echo "[2/6] Construyendo imagen Docker: $FULL_IMAGE"
 docker build -t "$FULL_IMAGE" .
 if [ $? -ne 0 ]; then
-  echo "ERROR: Falló el build de Docker"
-  exit 1
+    echo "❌ ERROR: Falló la construcción de la imagen Docker"
+    exit 1
 fi
 echo "✅ Imagen Docker construida"
 
-# ---- 3. PUSH A DOCKER HUB ----
+# ---- 3. IMPORTAR IMAGEN A k3s ----
 echo ""
-echo "[3/5] Subiendo imagen a Docker Hub..."
-echo "      (Si no estás logueado, ejecuta: docker login)"
-docker push "$FULL_IMAGE"
+echo "[3/6] Importando imagen a k3s..."
+docker save "$FULL_IMAGE" | ctr -n k8s.io images import -
 if [ $? -ne 0 ]; then
-  echo "ERROR: Falló el push. Asegúrate de estar logueado: docker login"
-  exit 1
+    echo "❌ ERROR: Falló la importación de la imagen a k3s"
+    exit 1
 fi
-echo "✅ Imagen subida a Docker Hub"
+echo "✅ Imagen importada a k3s"
 
-# ---- 4. APLICAR MANIFIESTOS KUBERNETES ----
+# Verificar que la imagen esté disponible
+echo "Verificando imagen en k3s:"
+crictl images | grep consumo-apis
+
+# ---- 4. APLICAR MANIFIESTOS ----
 echo ""
-echo "[4/5] Desplegando en Kubernetes..."
+echo "[4/6] Desplegando en Kubernetes..."
 cd "$MANIFEST_DIR" || exit 1
 
 kubectl apply -f keller-rejas-32-namespace.yml
@@ -60,34 +110,44 @@ kubectl apply -f keller-rejas-32-secret.yml
 kubectl apply -f keller-rejas-32-service.yml
 kubectl apply -f keller-rejas-32-deployment.yml
 
-if [ $? -ne 0 ]; then
-  echo "ERROR: Falló el despliegue en Kubernetes"
-  exit 1
-fi
 echo "✅ Manifiestos aplicados"
 
 # ---- 5. VERIFICAR ----
 echo ""
-echo "[5/5] Verificando despliegue..."
-echo ""
-echo "--- Namespace ---"
-kubectl get namespace $NAMESPACE
+echo "[5/6] Esperando que los pods levanten..."
+kubectl rollout status deployment/keller-rejas-32-deployment \
+  -n $NAMESPACE --timeout=300s
 
+# ---- 6. MOSTRAR ESTADO ----
 echo ""
-echo "--- Pods (esperando que estén Running) ---"
-kubectl rollout status deployment/keller-rejas-32-deployment -n $NAMESPACE --timeout=180s
-
+echo "[6/6] Estado del despliegue:"
 echo ""
 echo "--- Pods ---"
-kubectl get pods -n $NAMESPACE
+kubectl get pods -n $NAMESPACE -o wide
 
 echo ""
 echo "--- Service ---"
 kubectl get service -n $NAMESPACE
 
 echo ""
+echo "--- Logs del primer pod ---"
+POD_NAME=$(kubectl get pods -n $NAMESPACE -l app=consumo-apis -o jsonpath='{.items[0].metadata.name}' 2>/dev/null)
+if [ -n "$POD_NAME" ]; then
+    echo "Pod: $POD_NAME"
+    kubectl logs $POD_NAME -n $NAMESPACE --tail=20
+fi
+
+echo ""
 echo "============================================="
 echo " ✅ DESPLIEGUE COMPLETADO"
-echo " Swagger UI: http://localhost:8080/swagger-ui.html"
-echo " Health:     http://localhost:8080/actuator/health"
+echo ""
+echo " Comandos útiles:"
+echo " - Ver pods:    kubectl get pods -n $NAMESPACE"
+echo " - Ver logs:    kubectl logs -f <pod-name> -n $NAMESPACE"
+echo " - Ver service: kubectl get svc -n $NAMESPACE"
+echo " - Health:      curl http://localhost:8080/actuator/health"
+echo " - Swagger:     http://localhost:8080/swagger-ui.html"
+echo ""
+echo " Para probar la dependencia de secrets:"
+echo " bash demo-secret-dependency.sh"
 echo "============================================="
