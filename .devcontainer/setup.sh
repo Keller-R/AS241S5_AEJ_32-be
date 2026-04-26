@@ -15,7 +15,7 @@ HOME_DIR=$(eval echo ~$CURRENT_USER)
 # ---- 1. Instalar k3s sin systemd ----
 echo ""
 echo "[1/3] Instalando k3s (sin systemd)..."
-curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="--disable=traefik" INSTALL_K3S_SKIP_ENABLE=true sh -
+curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="--disable=traefik" INSTALL_K3S_SKIP_ENABLE=true INSTALL_K3S_SKIP_START=true sh -
 
 # Iniciar k3s manualmente en background (con snapshotter nativo para Codespace)
 echo "      Iniciando k3s en background..."
