@@ -1,0 +1,42 @@
+{
+  "name": "ConsumoApis - Keller Rejas 32",
+  "image": "mcr.microsoft.com/devcontainers/java:17-bullseye",
+
+  "features": {
+    "ghcr.io/devcontainers/features/java:1": {
+      "version": "17",
+      "installMaven": true,
+      "installGradle": false
+    },
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {
+      "version": "latest",
+      "dockerDashComposeVersion": "v2"
+    },
+    "ghcr.io/devcontainers/features/kubectl-helm-minikube:1": {
+      "version": "latest",
+      "helm": "none",
+      "minikube": "none"
+    }
+  },
+
+  "onCreateCommand": "bash .devcontainer/setup.sh",
+
+  "forwardPorts": [8080],
+  "portsAttributes": {
+    "8080": {
+      "label": "ConsumoApis",
+      "onAutoForward": "openPreview"
+    }
+  },
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "vscjava.vscode-java-pack",
+        "ms-kubernetes-tools.vscode-kubernetes-tools"
+      ]
+    }
+  },
+
+  "remoteUser": "vscode"
+}
