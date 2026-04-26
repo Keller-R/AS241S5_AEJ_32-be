@@ -37,22 +37,20 @@ if ! command -v mvn &> /dev/null; then
     apt-get install -y maven -qq
 fi
 
-# Verificar versión de Java
-JAVA_VERSION=$(java -version 2>&1 | awk -F '"' '/version/ {print $2}' | cut -d'.' -f1)
-if [ "$JAVA_VERSION" -lt 17 ]; then
-    echo "Java $JAVA_VERSION detectado. Instalando Java 17..."
+# Instalar Java 17 si no está disponible
+if [ ! -d "/usr/lib/jvm/java-17-openjdk-amd64" ]; then
+    echo "Instalando Java 17..."
     apt-get update -qq
     apt-get install -y openjdk-17-jdk -qq
-    
-    # Configurar Java 17 como predeterminado
-    export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
-    export PATH=$JAVA_HOME/bin:$PATH
-    
-    echo "Java 17 instalado y configurado"
 fi
 
+# Configurar Java 17 como predeterminado para este script
+export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+export PATH=$JAVA_HOME/bin:$PATH
+
 # Verificar instalación
-echo "Versiones instaladas:"
+echo "Versiones configuradas:"
+echo "JAVA_HOME: $JAVA_HOME"
 java -version
 mvn -version
 
