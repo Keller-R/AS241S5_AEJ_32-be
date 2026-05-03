@@ -1,0 +1,148 @@
+# ============================================
+# GitHub Actions Pipeline - DockerHub CI/CD
+# Estudiante: Keller Rejas (Número 32)
+# ============================================
+# Este pipeline se ejecuta automáticamente cuando:
+# - Se hace push a la rama develop
+# - Se hace push a la rama main
+# 
+# Acciones que realiza:
+# 1. Checkout del código
+# 2. Login en DockerHub
+# 3. Build de la imagen Docker
+# 4. Push de la imagen a DockerHub
+# ============================================
+
+name: DockerHub CI/CD Pipeline
+
+# Eventos que disparan el pipeline
+on:
+  push:
+    branches:
+      - develop
+      - main
+  pull_request:
+    branches:
+      - develop
+      - main
+  workflow_dispatch: # Permite ejecución manual desde GitHub Actions UI
+
+# Jobs del pipeline
+jobs:
+  build-and-push:
+    name: Build and Push Docker Image to DockerHub
+    runs-on: ubuntu-latest
+    
+    steps:
+      # ============================================
+      # PASO 1: Checkout del código
+      # ============================================
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Obtener todo el historial para tags
+
+      # ============================================
+      # PASO 2: Configurar Docker Buildx
+      # ============================================
+      # Docker Buildx permite builds multi-plataforma
+      # y mejora el rendimiento de construcción
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # ============================================
+      # PASO 3: Login en DockerHub
+      # ============================================
+      # Usa los secrets configurados en GitHub:
+      # - DOCKERHUB_USERNAME_KELLER
+      # - DOCKERHUB_TOKEN_KELLER
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME_KELLER }}
+          password: ${{ secrets.DOCKERHUB_TOKEN_KELLER }}
+
+      # ============================================
+      # PASO 4: Extraer metadata (tags y labels)
+      # ============================================
+      # Genera tags automáticos basados en:
+      # - Rama (develop, main)
+      # - Commit SHA
+      # - Fecha
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: kellerr/consumo-apis
+          tags: |
+            type=ref,event=branch
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=1.0
+
+      # ============================================
+      # PASO 5: Build y Push de la imagen
+      # ============================================
+      # Construye la imagen usando el Dockerfile
+      # y la sube automáticamente a DockerHub
+      - name: Build and Push Docker Image to Docker Hub
+        uses: docker/build-push-action@v5
+        with:
+          context: ./ConsumoApis
+          file: ./ConsumoApis/dockerfile-keller-rejas/Dockerfile
+          push: true
+          tags: |
+            kellerr/consumo-apis:latest
+            kellerr/consumo-apis:1.0
+            kellerr/consumo-apis:${{ github.sha }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # ============================================
+      # PASO 6: Verificar imagen subida
+      # ============================================
+      - name: Verify Docker Image
+        run: |
+          echo "✅ Imagen construida y subida exitosamente"
+          echo "📦 Imagen: kellerr/consumo-apis:latest"
+          echo "📦 Imagen: kellerr/consumo-apis:1.0"
+          echo "📦 Imagen: kellerr/consumo-apis:${{ github.sha }}"
+          echo "🔗 DockerHub: https://hub.docker.com/r/kellerr/consumo-apis"
+
+# ============================================
+# CONFIGURACIÓN DE SECRETS REQUERIDA:
+# ============================================
+# 
+# En GitHub, ve a:
+# Settings → Secrets and variables → Actions → New repository secret
+# 
+# Crea estos secrets:
+# 
+# 1. DOCKERHUB_USERNAME_KELLER
+#    Valor: kellerr
+# 
+# 2. DOCKERHUB_TOKEN_KELLER
+#    Valor: [Tu token de DockerHub con permisos de escritura]
+# 
+# ============================================
+# CÓMO OBTENER EL TOKEN DE DOCKERHUB:
+# ============================================
+# 
+# 1. Ve a https://hub.docker.com/settings/security
+# 2. Haz clic en "New Access Token"
+# 3. Nombre: "GitHub Actions Pipeline"
+# 4. Permisos: "Read, Write, Delete" (NO solo lectura)
+# 5. Copia el token generado
+# 6. Pégalo en el secret de GitHub
+# 
+# ============================================
+# TAGS GENERADOS AUTOMÁTICAMENTE:
+# ============================================
+# 
+# - latest: Última versión de la rama principal
+# - 1.0: Versión específica
+# - develop-abc123: Rama develop con commit SHA
+# - main-abc123: Rama main con commit SHA
+# 
+# ============================================
