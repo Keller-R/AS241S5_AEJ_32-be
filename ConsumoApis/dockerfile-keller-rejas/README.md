@@ -81,9 +81,6 @@ docker images | grep consumo-apis
 docker run -d \
   --name consumo-apis \
   -p 8080:8080 \
-  -e SPRING_DATA_MONGODB_URI="mongodb+srv://..." \
-  -e APIS_GOOGLE_MAPS_RAPIDAPI_KEY="tu-api-key" \
-  -e APIS_IP_GEO_RAPIDAPI_KEY="tu-api-key" \
   kellerr/consumo-apis:1.0
 ```
 
@@ -102,6 +99,44 @@ curl http://localhost:8080/actuator/health
 # Swagger UI
 # Abrir en navegador: http://localhost:8080/swagger-ui.html
 ```
+
+---
+
+## 🧪 PRUEBAS DE LA APLICACIÓN
+
+### Opción 1: Script Automatizado (Recomendado)
+
+#### En Linux/Mac:
+```bash
+chmod +x test-container.sh
+./test-container.sh 1.0
+```
+
+#### En Windows (PowerShell):
+```powershell
+.\test-container.ps1 -Version "1.0"
+```
+
+### Opción 2: Pruebas Manuales
+
+Ver la guía completa de pruebas: **[GUIA_PRUEBAS.md](GUIA_PRUEBAS.md)**
+
+Incluye:
+- ✅ Pruebas con Health Check
+- ✅ Pruebas con Swagger UI
+- ✅ Pruebas con cURL
+- ✅ Pruebas con Postman
+- ✅ Solución de problemas
+
+### Endpoints Disponibles
+
+| Método | Endpoint | Descripción |
+|--------|----------|-------------|
+| GET | `/actuator/health` | Verificar salud de la aplicación |
+| GET | `/places/search` | Buscar lugares |
+| GET | `/geo/ip/{ipAddress}` | Geolocalización por IP |
+| GET | `/places/autocomplete` | Autocompletar lugares |
+| GET | `/places/{placeId}/photos/{photoReference}` | Obtener fotos |
 
 ---
 
@@ -133,12 +168,25 @@ ConsumoApis/
 
 ## 🔗 Enlaces de DockerHub
 
-### Imágenes Base (renombradas)
-1. **Maven:** https://hub.docker.com/r/kellerr/maven
-2. **Eclipse Temurin JDK 17:** https://hub.docker.com/r/kellerr/eclipse-temurin
+### ⚠️ IMPORTANTE: TODAS ESTAS IMÁGENES DEBEN ESTAR EN DOCKERHUB
 
-### Imagen de la Aplicación
-- **ConsumoApis:** https://hub.docker.com/r/kellerr/consumo-apis
+### Imágenes Base (renombradas y subidas)
+1. **Maven:** https://hub.docker.com/r/kellerr/maven
+   - Imagen original: `maven:3.9-amazoncorretto-17-alpine`
+   - Imagen personalizada: `kellerr/maven:3.9-amazoncorretto-17-alpine`
+   - **Estado:** ✅ Subida a DockerHub
+
+2. **Eclipse Temurin JDK 17:** https://hub.docker.com/r/kellerr/eclipse-temurin
+   - Imagen original: `eclipse-temurin:17-jre-alpine`
+   - Imagen personalizada: `kellerr/eclipse-temurin:17-jre-alpine`
+   - **Estado:** ✅ Subida a DockerHub
+
+### Imagen de la Aplicación (construida con las imágenes base)
+3. **ConsumoApis:** https://hub.docker.com/r/kellerr/consumo-apis
+   - Imagen: `kellerr/consumo-apis:1.0` (Versión inicial)
+   - Usa: `kellerr/maven` (Stage 1 - Build)
+   - Usa: `kellerr/eclipse-temurin` (Stage 2 - Runtime)
+   - **Estado:** 🔄 Por subir a DockerHub (proceso demostrado en video)
 
 ---
 
