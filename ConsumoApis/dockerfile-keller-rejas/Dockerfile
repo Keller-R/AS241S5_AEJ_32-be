@@ -60,31 +60,31 @@ RUN mvn clean package -DskipTests -B
 # STAGE 2: RUNTIME (EJECUCIÓN)
 # ============================================================
 # 
-# Esta etapa utiliza la imagen personalizada de Java Runtime:
-# - Imagen original: eclipse-temurin:17-jre-alpine
-# - Imagen personalizada: kellerr/eclipse-temurin:17-jre-alpine
+# Esta etapa utiliza una imagen basada en Ubuntu (Jammy):
+# - Imagen: eclipse-temurin:17-jre-jammy
+# - Ubuntu 22.04 LTS (Jammy Jellyfish)
 # 
-# ¿Por qué personalizada?
-# - Mismo concepto que la imagen de Maven
-# - Demuestra reutilización de imágenes base
-# - Mantiene consistencia en el equipo
+# ¿Por qué Ubuntu en lugar de Alpine?
+# - Alpine tiene problemas con MongoDB Atlas SSL/TLS
+# - Ubuntu incluye certificados CA necesarios para MongoDB
+# - Mejor compatibilidad con librerías nativas
 # 
 # Contenido de esta imagen:
 # - Java 17 Runtime (JRE - Java Runtime Environment)
-# - Alpine Linux (sistema operativo liviano)
+# - Ubuntu 22.04 LTS (sistema operativo estable)
+# - Certificados SSL/TLS completos
 # - NO incluye Maven ni herramientas de compilación
 # 
-# Tamaño: ~256MB (más liviana que Maven porque solo ejecuta)
+# Tamaño: ~350MB (más grande que Alpine pero más compatible)
 # 
 # ¿Por qué dos etapas?
-# - Stage 1 (Builder): Pesada (~483MB) pero solo para compilar
-# - Stage 2 (Runtime): Liviana (~256MB) para ejecutar
-# - Resultado final: Solo ~330MB (sin herramientas de compilación)
+# - Stage 1 (Builder): Compila el código
+# - Stage 2 (Runtime): Solo ejecuta la aplicación
+# - Resultado final: Imagen optimizada sin herramientas de compilación
 # 
-# Ventaja: La imagen final es más pequeña y segura
-# (no contiene compilador ni herramientas innecesarias)
+# Ventaja: Compatible con MongoDB Atlas y otras APIs que requieren SSL
 # =============================================================
-FROM kellerr/eclipse-temurin:17-jre-alpine
+FROM eclipse-temurin:17-jre-jammy
 
 # Establecer el directorio de trabajo
 WORKDIR /app
@@ -92,7 +92,7 @@ WORKDIR /app
 # Crear un grupo de usuario "spring" para seguridad
 # Ejecutar aplicaciones como root es un riesgo de seguridad
 # Por eso creamos un usuario no-root
-RUN addgroup -S spring && adduser -S spring -G spring
+RUN groupadd -r spring && useradd -r -g spring spring
 
 # Cambiar al usuario "spring" (no-root)
 # Todos los comandos siguientes se ejecutarán como este usuario
