@@ -60,31 +60,31 @@ RUN mvn clean package -DskipTests -B
 # STAGE 2: RUNTIME (EJECUCIÓN)
 # ============================================================
 # 
-# Esta etapa utiliza una imagen basada en Ubuntu (Jammy):
-# - Imagen: eclipse-temurin:17-jre-jammy
-# - Ubuntu 22.04 LTS (Jammy Jellyfish)
+# Esta etapa utiliza una imagen personalizada de Java Runtime:
+# - Imagen original: eclipse-temurin:17-jre-alpine
+# - Imagen personalizada: kellerr/eclipse-temurin:17-jre-alpine
 # 
-# ¿Por qué Ubuntu en lugar de Alpine?
-# - Alpine tiene problemas con MongoDB Atlas SSL/TLS
-# - Ubuntu incluye certificados CA necesarios para MongoDB
-# - Mejor compatibilidad con librerías nativas
+# ¿Por qué personalizada?
+# - Demuestra que podemos descargar imágenes oficiales
+# - Renombrarlas con nuestro usuario de DockerHub
+# - Subirlas a nuestra cuenta
+# - Reutilizarlas en nuestros Dockerfiles
 # 
 # Contenido de esta imagen:
 # - Java 17 Runtime (JRE - Java Runtime Environment)
-# - Ubuntu 22.04 LTS (sistema operativo estable)
-# - Certificados SSL/TLS completos
+# - Alpine Linux (sistema operativo liviano)
 # - NO incluye Maven ni herramientas de compilación
 # 
-# Tamaño: ~350MB (más grande que Alpine pero más compatible)
+# Tamaño: ~200MB (imagen optimizada y liviana)
 # 
 # ¿Por qué dos etapas?
 # - Stage 1 (Builder): Compila el código
 # - Stage 2 (Runtime): Solo ejecuta la aplicación
 # - Resultado final: Imagen optimizada sin herramientas de compilación
 # 
-# Ventaja: Compatible con MongoDB Atlas y otras APIs que requieren SSL
+# Ventaja: Imagen muy liviana y optimizada para producción
 # =============================================================
-FROM eclipse-temurin:17-jre-jammy
+FROM kellerr/eclipse-temurin:17-jre-alpine
 
 # Establecer el directorio de trabajo
 WORKDIR /app
@@ -92,7 +92,7 @@ WORKDIR /app
 # Crear un grupo de usuario "spring" para seguridad
 # Ejecutar aplicaciones como root es un riesgo de seguridad
 # Por eso creamos un usuario no-root
-RUN groupadd -r spring && useradd -r -g spring spring
+RUN addgroup -S spring && adduser -S spring -G spring
 
 # Cambiar al usuario "spring" (no-root)
 # Todos los comandos siguientes se ejecutarán como este usuario
