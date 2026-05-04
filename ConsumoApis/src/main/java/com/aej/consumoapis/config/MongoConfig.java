@@ -1,8 +1,7 @@
 package com.aej.consumoapis.config;
 
 import org.springframework.context.annotation.Configuration;
-
-import javax.annotation.PostConstruct;
+import jakarta.annotation.PostConstruct;
 
 /**
  * Configuración de MongoDB para solucionar problemas de SSL
