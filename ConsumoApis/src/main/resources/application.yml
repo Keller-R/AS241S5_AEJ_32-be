@@ -8,7 +8,7 @@ spring:
   # MongoDB Atlas Configuration
   data:
     mongodb:
-      uri: mongodb+srv://kellerrejas_db_user:T6NwrDiXbfIBvCRA@mycluster.bee1ylw.mongodb.net/15_keller_rejas?retryWrites=true&w=majority&tls=true&tlsAllowInvalidCertificates=true
+      uri: mongodb+srv://kellerrejas_db_user:T6NwrDiXbfIBvCRA@mycluster.bee1ylw.mongodb.net/15_keller_rejas?retryWrites=true&w=majority&ssl=true
   
   # Jackson Configuration
   jackson:
