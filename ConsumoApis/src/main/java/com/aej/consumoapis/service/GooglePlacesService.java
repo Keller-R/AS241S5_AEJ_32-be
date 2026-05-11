@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
@@ -56,6 +57,7 @@ public class GooglePlacesService {
             .map(response -> {
                 response.setQuery(query);
                 response.setTimestamp(LocalDateTime.now());
+                response.setDeleted(false);
                 return response;
             })
             .flatMap(repository::save)
@@ -320,5 +322,70 @@ public class GooglePlacesService {
             .flatMap(photoRepository::save)
             .doOnSuccess(response -> log.info("Successfully saved photo response for placeId: {}", placeId))
             .doOnError(error -> log.error("Error getting photo for placeId: {}", placeId, error));
+    }
+    
+    /**
+     * Obtiene todas las búsquedas de lugares que no han sido eliminadas
+     */
+    public Flux<GooglePlacesResponse> getAllPlacesQueries() {
+        log.info("Getting all places queries");
+        return repository.findByDeletedFalseOrDeletedIsNull()
+            .doOnComplete(() -> log.info("Successfully retrieved all places queries"))
+            .doOnError(error -> log.error("Error getting all places queries", error));
+    }
+    
+    /**
+     * Obtiene una búsqueda de lugares por ID
+     */
+    public Mono<GooglePlacesResponse> getPlacesQueryById(String id) {
+        log.info("Getting places query by ID: {}", id);
+        return repository.findById(id)
+            .filter(response -> response.getDeleted() == null || !response.getDeleted())
+            .doOnSuccess(response -> {
+                if (response != null) {
+                    log.info("Successfully retrieved places query with ID: {}", id);
+                } else {
+                    log.warn("Places query with ID {} not found or is deleted", id);
+                }
+            })
+            .doOnError(error -> log.error("Error getting places query by ID: {}", id, error));
+    }
+    
+    /**
+     * Actualiza una búsqueda de lugares con una nueva consulta
+     */
+    public Mono<GooglePlacesResponse> updatePlacesQuery(String id, String newQuery) {
+        log.info("Updating places query with ID: {} with new query: {}", id, newQuery);
+        
+        return repository.findById(id)
+            .filter(response -> response.getDeleted() == null || !response.getDeleted())
+            .flatMap(existingResponse -> {
+                // Realizar nueva búsqueda con la nueva query
+                return searchPlaces(newQuery)
+                    .map(newResponse -> {
+                        // Mantener el ID original
+                        newResponse.setId(id);
+                        return newResponse;
+                    })
+                    .flatMap(repository::save);
+            })
+            .doOnSuccess(response -> log.info("Successfully updated places query with ID: {}", id))
+            .doOnError(error -> log.error("Error updating places query with ID: {}", id, error));
+    }
+    
+    /**
+     * Realiza un borrado lógico de una búsqueda de lugares
+     */
+    public Mono<Void> deletePlacesQuery(String id) {
+        log.info("Deleting places query with ID: {}", id);
+        
+        return repository.findById(id)
+            .flatMap(response -> {
+                response.setDeleted(true);
+                return repository.save(response);
+            })
+            .then()
+            .doOnSuccess(v -> log.info("Successfully deleted places query with ID: {}", id))
+            .doOnError(error -> log.error("Error deleting places query with ID: {}", id, error));
     }
 }

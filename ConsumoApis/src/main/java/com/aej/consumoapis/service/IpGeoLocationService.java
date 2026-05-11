@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
@@ -39,6 +40,7 @@ public class IpGeoLocationService {
             .map(response -> {
                 response.setIpAddress(ipAddress);
                 response.setTimestamp(LocalDateTime.now());
+                response.setDeleted(false);
                 return response;
             })
             .flatMap(repository::save)
@@ -112,5 +114,70 @@ public class IpGeoLocationService {
             errorResponse.setRawResponse(jsonResponse);
             return errorResponse;
         }
+    }
+    
+    /**
+     * Obtiene todas las consultas de geolocalización que no han sido eliminadas
+     */
+    public Flux<IpGeoLocationResponse> getAllGeoQueries() {
+        log.info("Getting all geo queries");
+        return repository.findByDeletedFalseOrDeletedIsNull()
+            .doOnComplete(() -> log.info("Successfully retrieved all geo queries"))
+            .doOnError(error -> log.error("Error getting all geo queries", error));
+    }
+    
+    /**
+     * Obtiene una consulta de geolocalización por ID
+     */
+    public Mono<IpGeoLocationResponse> getGeoQueryById(String id) {
+        log.info("Getting geo query by ID: {}", id);
+        return repository.findById(id)
+            .filter(response -> response.getDeleted() == null || !response.getDeleted())
+            .doOnSuccess(response -> {
+                if (response != null) {
+                    log.info("Successfully retrieved geo query with ID: {}", id);
+                } else {
+                    log.warn("Geo query with ID {} not found or is deleted", id);
+                }
+            })
+            .doOnError(error -> log.error("Error getting geo query by ID: {}", id, error));
+    }
+    
+    /**
+     * Actualiza una consulta de geolocalización con una nueva IP
+     */
+    public Mono<IpGeoLocationResponse> updateGeoQuery(String id, String newIpAddress) {
+        log.info("Updating geo query with ID: {} with new IP: {}", id, newIpAddress);
+        
+        return repository.findById(id)
+            .filter(response -> response.getDeleted() == null || !response.getDeleted())
+            .flatMap(existingResponse -> {
+                // Realizar nueva consulta a la API con la nueva IP
+                return getLocationByIp(newIpAddress)
+                    .map(newResponse -> {
+                        // Mantener el ID original
+                        newResponse.setId(id);
+                        return newResponse;
+                    })
+                    .flatMap(repository::save);
+            })
+            .doOnSuccess(response -> log.info("Successfully updated geo query with ID: {}", id))
+            .doOnError(error -> log.error("Error updating geo query with ID: {}", id, error));
+    }
+    
+    /**
+     * Realiza un borrado lógico de una consulta de geolocalización
+     */
+    public Mono<Void> deleteGeoQuery(String id) {
+        log.info("Deleting geo query with ID: {}", id);
+        
+        return repository.findById(id)
+            .flatMap(response -> {
+                response.setDeleted(true);
+                return repository.save(response);
+            })
+            .then()
+            .doOnSuccess(v -> log.info("Successfully deleted geo query with ID: {}", id))
+            .doOnError(error -> log.error("Error deleting geo query with ID: {}", id, error));
     }
 }

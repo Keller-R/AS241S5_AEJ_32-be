@@ -1,4 +1,4 @@
-# 🐳 Dockerfile - Keller Rejas (Número 32)
+# 🐳 Dockerfile - Keller Rejas ( Número 32 )
 
 ## 📋 Descripción
 

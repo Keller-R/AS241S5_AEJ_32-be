@@ -55,4 +55,7 @@ public class IpGeoLocationResponse {
     
     @Schema(description = "Respuesta cruda de la API en formato JSON")
     private String rawResponse;
+    
+    @Schema(description = "Indica si el registro ha sido eliminado lógicamente", example = "false")
+    private Boolean deleted = false;
 }
