@@ -73,7 +73,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: kellerr/as241s5_aej_32-fe
+          images: kellerr/as241s5_aej_32-be
           tags: |
             type=ref,event=branch
             type=sha,prefix={{branch}}-
@@ -92,9 +92,9 @@ jobs:
           file: ./Dockerfile
           push: true
           tags: |
-            kellerr/as241s5_aej_32-fe:latest
-            kellerr/as241s5_aej_32-fe:1.0
-            kellerr/as241s5_aej_32-fe:${{ github.sha }}
+            kellerr/as241s5_aej_32-be:latest
+            kellerr/as241s5_aej_32-be:1.0
+            kellerr/as241s5_aej_32-be:${{ github.sha }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -105,10 +105,10 @@ jobs:
       - name: Verify Docker Image
         run: |
           echo "✅ Imagen construida y subida exitosamente"
-          echo "📦 Imagen: kellerr/as241s5_aej_32-fe:latest"
-          echo "📦 Imagen: kellerr/as241s5_aej_32-fe:1.0"
-          echo "📦 Imagen: kellerr/as241s5_aej_32-fe:${{ github.sha }}"
-          echo "🔗 DockerHub: https://hub.docker.com/r/kellerr/as241s5_aej_32-fe"
+          echo "📦 Imagen: kellerr/as241s5_aej_32-be:latest"
+          echo "📦 Imagen: kellerr/as241s5_aej_32-be:1.0"
+          echo "📦 Imagen: kellerr/as241s5_aej_32-be:${{ github.sha }}"
+          echo "🔗 DockerHub: https://hub.docker.com/r/kellerr/as241s5_aej_32-be"
 
 # ============================================
 # CONFIGURACIÓN DE SECRETS REQUERIDA:
