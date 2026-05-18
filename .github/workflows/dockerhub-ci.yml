@@ -73,7 +73,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: kellerr/as241s5_aej_32-be
+          images: kellerr/consumo-apis
           tags: |
             type=ref,event=branch
             type=sha,prefix={{branch}}-
@@ -88,13 +88,12 @@ jobs:
       - name: Build and Push Docker Image to Docker Hub
         uses: docker/build-push-action@v5
         with:
-          context: .
-          file: ./Dockerfile
+          context: ./ConsumoApis
+          file: ./ConsumoApis/dockerfile-keller-rejas/Dockerfile
           push: true
           tags: |
-            kellerr/as241s5_aej_32-be:latest
-            kellerr/as241s5_aej_32-be:1.0
-            kellerr/as241s5_aej_32-be:${{ github.sha }}
+            ${{ secrets.DOCKERHUB_USERNAME_KELLER }}/as241s5_aej_32-be:latest
+            ${{ secrets.DOCKERHUB_USERNAME_KELLER }}/as241s5_aej_32-be:${{ github.sha }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -105,10 +104,10 @@ jobs:
       - name: Verify Docker Image
         run: |
           echo "✅ Imagen construida y subida exitosamente"
-          echo "📦 Imagen: kellerr/as241s5_aej_32-be:latest"
-          echo "📦 Imagen: kellerr/as241s5_aej_32-be:1.0"
-          echo "📦 Imagen: kellerr/as241s5_aej_32-be:${{ github.sha }}"
-          echo "🔗 DockerHub: https://hub.docker.com/r/kellerr/as241s5_aej_32-be"
+          echo "📦 Imagen: kellerr/consumo-apis:latest"
+          echo "📦 Imagen: kellerr/consumo-apis:1.0"
+          echo "📦 Imagen: kellerr/consumo-apis:${{ github.sha }}"
+          echo "🔗 DockerHub: https://hub.docker.com/r/kellerr/consumo-apis"
 
 # ============================================
 # CONFIGURACIÓN DE SECRETS REQUERIDA:
