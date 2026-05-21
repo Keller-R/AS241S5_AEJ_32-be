@@ -1,0 +1,47 @@
+name: SonarCloud Scan
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+      - develop
+
+jobs:
+  sonarcloud-scan:
+    name: SonarCloud Quality & Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # SonarCloud requiere todo el historial de Git para asociar autores y bugs
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: maven
+          cache-dependency-path: ConsumoApis/pom.xml
+
+      - name: Cache SonarCloud packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.sonar/cache
+          key: ${{ runner.os }}-sonar
+          restore-keys: ${{ runner.os }}-sonar
+
+      - name: Build and Analyze with SonarCloud
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Requerido por SonarCloud para interactuar con GitHub
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}    # Creado en SonarCloud y configurado en Secrets de GitHub
+        working-directory: ConsumoApis
+        run: |
+          mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
+            -Dsonar.projectKey=Keller-R_AS241S5_AEJ_32-be \
+            -Dsonar.organization=keller-r \
+            -Dsonar.host.url=https://sonarcloud.io
