@@ -9,6 +9,7 @@ on:
     branches:
       - main
       - develop
+  workflow_dispatch:  # Permite ejecutar manualmente desde la interfaz de GitHub
 
 jobs:
   sonarcloud-scan:
