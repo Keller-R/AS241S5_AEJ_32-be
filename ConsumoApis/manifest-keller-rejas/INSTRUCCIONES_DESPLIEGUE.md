@@ -29,13 +29,13 @@ mvn clean package -DskipTests
 
 ### 2. Construir imagen Docker
 ```bash
-docker build -t kellerrejas/consumo-apis:latest .
+docker build -t kellerr/consumo-apis:latest .
 ```
 
 ### 3. Subir imagen a Docker Hub
 ```bash
 docker login
-docker push kellerrejas/consumo-apis:latest
+docker push kellerr/consumo-apis:latest
 ```
 
 ### 4. Aplicar manifiestos Kubernetes

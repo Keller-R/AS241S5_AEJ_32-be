@@ -20,7 +20,7 @@ spec:
     spec:
       containers:
         - name: consumo-apis
-          image: kellerrejas/consumo-apis:latest
+          image: kellerr/consumo-apis:latest
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
